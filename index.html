@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hydra Terra — WebGPU Fluid &amp; Erosion Sandbox</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #0b0e14; font-family: "Segoe UI", system-ui, sans-serif;
+    color: #e6edf3;
+  }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+  .panel {
+    position: fixed; top: 16px; left: 16px; width: 248px;
+    background: rgba(13, 18, 28, 0.72);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 14px; padding: 14px 16px 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    user-select: none;
+  }
+  .panel h1 {
+    font-size: 15px; margin: 0 0 2px; font-weight: 600; letter-spacing: 0.4px;
+  }
+  .panel h1 span { color: #5ec8f8; }
+  .sub { font-size: 11px; color: #8b98a9; margin: 0 0 12px; }
+
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  button {
+    flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, #1d2a3d, #15202f);
+    color: #dbe6f1; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: filter .15s, transform .05s;
+  }
+  button:hover { filter: brightness(1.25); }
+  button:active { transform: translateY(1px); }
+  button.primary { background: linear-gradient(180deg, #1f6feb, #1158c7); border-color: #388bfd66; }
+
+  label { display: block; font-size: 11px; color: #9fb0c3; margin: 8px 0 3px; }
+  label b { float: right; color: #d7e3f0; font-weight: 600; }
+  input[type=range] {
+    width: 100%; accent-color: #45a4e6; height: 18px; cursor: pointer;
+  }
+
+  .hints { margin-top: 12px; font-size: 11px; line-height: 1.7; color: #8b98a9; }
+  .hints .k {
+    display: inline-block; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 5px; padding: 0 6px; font-size: 10px; color: #cfd9e4; margin-right: 4px;
+  }
+
+  #fps {
+    position: fixed; top: 16px; right: 16px; font-size: 11px; color: #8b98a9;
+    background: rgba(13,18,28,0.6); padding: 5px 10px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  #fail {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: #0b0e14; z-index: 10; text-align: center; padding: 24px;
+  }
+  #fail .box { max-width: 480px; line-height: 1.6; color: #c6d2de; font-size: 14px; }
+  #fail h2 { color: #ff7b72; }
+  #fail code { background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="panel">
+  <h1>HYDRA <span>TERRA</span></h1>
+  <p class="sub">WebGPU fluid &amp; erosion sandbox</p>
+
+  <div class="row">
+    <button id="reset" class="primary">⟳ New Terrain</button>
+    <button id="clear">Drain Water</button>
+  </div>
+
+  <label>Flow rate <b id="rateV">3.0</b></label>
+  <input id="rate" type="range" min="0.5" max="10" step="0.1" value="3">
+
+  <label>Brush radius <b id="radV">4</b></label>
+  <input id="rad" type="range" min="1.5" max="12" step="0.5" value="4">
+
+  <div class="hints">
+    <span class="k">L-drag</span> pour water<br>
+    <span class="k">R-drag</span> orbit camera<br>
+    <span class="k">Wheel</span> zoom &nbsp;
+    <span class="k">R</span> new terrain &nbsp;
+    <span class="k">C</span> drain
+  </div>
+</div>
+
+<div id="fps"></div>
+
+<div id="fail"><div class="box">
+  <h2>WebGPU not available</h2>
+  <p id="failMsg">This demo needs a browser with WebGPU — recent Chrome, Edge, or Safari.
+  Also make sure the page is served over <code>http://localhost</code>
+  (e.g. <code>python3 -m http.server</code>) rather than opened in an unsupported context.</p>
+</div></div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
