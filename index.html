@@ -13,7 +13,8 @@
   #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
   .panel {
-    position: fixed; top: 16px; left: 16px; width: 248px;
+    position: fixed; top: 16px; left: 16px; width: 252px;
+    max-height: calc(100% - 32px); overflow-y: auto;
     background: rgba(13, 18, 28, 0.72);
     border: 1px solid rgba(255,255,255,0.09);
     border-radius: 14px; padding: 14px 16px 16px;
@@ -21,6 +22,7 @@
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.45);
     user-select: none;
+    scrollbar-width: thin;
   }
   .panel h1 {
     font-size: 15px; margin: 0 0 2px; font-weight: 600; letter-spacing: 0.4px;
@@ -29,20 +31,53 @@
   .sub { font-size: 11px; color: #8b98a9; margin: 0 0 12px; }
 
   .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
   button {
     flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
     background: linear-gradient(180deg, #1d2a3d, #15202f);
     color: #dbe6f1; font-size: 12px; font-weight: 600; cursor: pointer;
     transition: filter .15s, transform .05s;
   }
+  .grid3 button, .grid4 button { padding: 6px 0; font-size: 11px; }
   button:hover { filter: brightness(1.25); }
   button:active { transform: translateY(1px); }
   button.primary { background: linear-gradient(180deg, #1f6feb, #1158c7); border-color: #388bfd66; }
+  button.active {
+    background: linear-gradient(180deg, #1f6feb, #1158c7);
+    border-color: #58b6fd; color: #fff;
+  }
 
   label { display: block; font-size: 11px; color: #9fb0c3; margin: 8px 0 3px; }
   label b { float: right; color: #d7e3f0; font-weight: 600; }
+  label.sec { margin-top: 12px; text-transform: uppercase; letter-spacing: 0.6px;
+              font-size: 10px; color: #6f7f92; }
+  label .dim { text-transform: none; letter-spacing: 0; color: #5d6b7c; float: none; }
+  select {
+    float: right; background: #15202f; color: #dbe6f1; font-size: 11px;
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;
+    padding: 2px 4px; cursor: pointer;
+  }
   input[type=range] {
     width: 100%; accent-color: #45a4e6; height: 18px; cursor: pointer;
+  }
+  .chk { display: flex; align-items: center; gap: 7px; font-size: 11px;
+         color: #9fb0c3; margin-top: 10px; cursor: pointer; }
+  .chk input { accent-color: #45a4e6; cursor: pointer; }
+
+  /* X-ray color scale: matches xrayScale() in the shader */
+  #legend .grad {
+    height: 10px; border-radius: 5px; margin-top: 2px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: linear-gradient(90deg, #8cf7ff, #1a73f2, #330d80);
+  }
+  #legend .gradlbl { display: flex; justify-content: space-between;
+                     font-size: 10px; color: #8b98a9; margin-top: 2px; }
+
+  #mass {
+    position: fixed; top: 44px; right: 16px; font-size: 11px; color: #8b98a9;
+    background: rgba(13,18,28,0.6); padding: 5px 10px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
   }
 
   .hints { margin-top: 12px; font-size: 11px; line-height: 1.7; color: #8b98a9; }
@@ -78,22 +113,93 @@
     <button id="clear">Drain Water</button>
   </div>
 
-  <label>Flow rate <b id="rateV">3.0</b></label>
+  <label class="sec">Generation <span class="dim">(applies on ⟳)</span></label>
+  <label>Map size <select id="mapsize">
+    <option value="128">128 × 128</option>
+    <option value="256">256 × 256</option>
+    <option value="384">384 × 384</option>
+    <option value="512">512 × 512</option>
+  </select></label>
+  <label>Relief / height <b id="reliefV">1.00</b></label>
+  <input id="relief" type="range" min="0.4" max="2" step="0.05" value="1">
+  <label>Island size <b id="islandV">1.00</b></label>
+  <input id="island" type="range" min="0.6" max="1.5" step="0.05" value="1">
+  <label>Soil depth <b id="soilV">1.00</b></label>
+  <input id="soil" type="range" min="0.3" max="2.5" step="0.05" value="1">
+  <label>Sediment depth <b id="gdepthV">10.0</b></label>
+  <input id="gdepth" type="range" min="2" max="20" step="0.5" value="10">
+
+  <label class="sec">Tool</label>
+  <div class="grid3" id="tools">
+    <button data-tool="0">💧 Water</button>
+    <button data-tool="1">⛰ Add</button>
+    <button data-tool="2">⛏ Dig</button>
+    <button data-tool="3">⇅ Replace</button>
+    <button data-tool="4">🌲 Plant</button>
+    <button data-tool="5">✂ Cut trees</button>
+  </div>
+
+  <div id="matRow">
+    <label class="sec">Material</label>
+    <div class="grid4" id="mats">
+      <button data-mat="0">Rock</button>
+      <button data-mat="1">Clay</button>
+      <button data-mat="2">Silt</button>
+      <button data-mat="3">Sand</button>
+      <button data-mat="4">Gravel</button>
+      <button data-mat="5">Loam</button>
+      <button data-mat="6">Reglth</button>
+      <button data-mat="7">Bldrs</button>
+    </div>
+  </div>
+
+  <div id="bandRow">
+    <label>Replace depth <b id="depthV">0.0</b></label>
+    <input id="depth" type="range" min="0" max="20" step="0.5" value="0">
+    <label>Band thickness <b id="bandV">3.0</b></label>
+    <input id="band" type="range" min="0.5" max="12" step="0.5" value="3">
+  </div>
+
+  <label>Flow / amount <b id="rateV">3.0</b></label>
   <input id="rate" type="range" min="0.5" max="10" step="0.1" value="3">
 
   <label>Brush radius <b id="radV">4</b></label>
   <input id="rad" type="range" min="1.5" max="12" step="0.5" value="4">
 
+  <label class="sec">View</label>
+  <div class="grid4" id="views">
+    <button data-view="0">Norm</button>
+    <button data-view="1">Moist</button>
+    <button data-view="2">Strata</button>
+    <button data-view="3">X-ray</button>
+  </div>
+
+  <div id="legend" style="display:none">
+    <label>Water column depth</label>
+    <div class="grad"></div>
+    <div class="gradlbl"><span>shallow</span><span>deep</span></div>
+  </div>
+
+  <label>Underground cutaway <b id="cutV">Off</b></label>
+  <input id="cut" type="range" min="0" max="255" step="1" value="0">
+
+  <label class="chk"><input type="checkbox" id="walls"> Solid map edges (no outflow)</label>
+
   <div class="hints">
-    <span class="k">L-drag</span> pour water<br>
-    <span class="k">R-drag</span> orbit camera<br>
-    <span class="k">Wheel</span> zoom &nbsp;
+    <span class="k">L-drag</span> use tool &nbsp;
+    <span class="k">Shift+click</span> spring on/off<br>
+    <span class="k">R-drag</span> orbit camera &nbsp;
+    <span class="k">Wheel</span> zoom<br>
+    <span class="k">1–6</span> tools &nbsp;
+    <span class="k">V</span> view &nbsp;
+    <span class="k">B</span> walls<br>
     <span class="k">R</span> new terrain &nbsp;
     <span class="k">C</span> drain
   </div>
 </div>
 
 <div id="fps"></div>
+<div id="mass"></div>
 
 <div id="fail"><div class="box">
   <h2>WebGPU not available</h2>
